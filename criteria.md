@@ -46,11 +46,13 @@ Two things worth knowing before you pick numbers:
 
 <!-- Your criterion. It must name a number. -->
 
-
+Of 10 human-written submissions, no more than 1 receives the
+high-confidence AI label.
 
 **Why this target:**
 
-
+False accusations can unfairly harm writers, so the system should prioritize
+avoiding false positives over catching every AI submission.
 
 ---
 
@@ -58,11 +60,13 @@ Two things worth knowing before you pick numbers:
 
 <!-- Your criterion. -->
 
-
+The combined confidence scores for clearly human and clearly AI calibration
+texts must differ by at least 0.20.
 
 **Why this target:**
 
-
+The score should provide meaningful separation instead of assigning nearly the
+same confidence to obviously different examples.
 
 ---
 
@@ -70,11 +74,13 @@ Two things worth knowing before you pick numbers:
 
 <!-- Your criterion. -->
 
-
+Across a calibration set containing clearly human, borderline, and clearly AI
+texts, each of the three labels must be returned at least once.
 
 **Why this target:**
 
-
+All three labels are required so the service can express high confidence in
+either direction as well as uncertainty.
 
 ---
 
@@ -82,11 +88,13 @@ Two things worth knowing before you pick numbers:
 
 <!-- Your criterion. -->
 
-
+For every valid appeal, the service must return a confirmation, change the
+content status to `under_review`, and record the appeal reason.
 
 **Why this target:**
 
-
+Writers need a reliable way to challenge an incorrect result, and the appeal
+must be reviewable rather than silently discarded.
 
 ---
 
@@ -94,11 +102,13 @@ Two things worth knowing before you pick numbers:
 
 <!-- Your criterion. -->
 
-
+Requests with missing or empty `text` must return an HTTP 400 response, and a
+request with text larger than the documented limit must also return HTTP 400.
 
 **Why this target:**
 
-
+Rejecting invalid or oversized input protects the service from unclear
+results, unnecessary work, and resource exhaustion.
 
 ---
 
