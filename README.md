@@ -116,16 +116,24 @@ changing who wrote the text.
 <!-- Write the rule in words, then give the numbers. What happens when the two
      signals disagree? -->
 
-**The rule:**
+**The rule:** I use an equal-weight average of the model signal and the style
+signal. Both signals run from 0 to 1, with higher values meaning more
+AI-like. When they disagree, the average moves toward the middle and treats
+the disagreement as uncertainty.
 
-**The numbers:**
+**The numbers:** `0.5 * model_score + 0.5 * style_score`, rounded to four
+decimal places.
 
 **Where it lives:** `scoring.py::combine_signals`
 
 <!-- ⚠️ The grader checks your code against that line. If your rule lives
      somewhere else, say where. -->
 
-**A case where my two signals split, and what my rule does with it:**
+**A case where my two signals split, and what my rule does with it:** For the
+text “The system follows a clear process. It handles each request carefully,
+but human writing can vary,” the model score was `0.1709` and the style score
+was `0.4099`. The average was `0.2904`, so the combined result stayed closer
+to the human side while preserving the disagreement in the score.
 
 
 
@@ -166,17 +174,18 @@ changing who wrote the text.
      diagnostics. -->
 
 ```bash
-C:\> curl.exe -X POST http://127.0.0.1:5000/submit -H "Content-Type: application/json" -d "{\"text\":\"I walked home in the rain and noticed a blue bird.\",\"creator_id\":\"writer1\"}"
+C:\> curl.exe -X POST http://127.0.0.1:5000/submit -H "Content-Type: application/json" -d "{\"text\":\"The system follows a clear process. It handles each request carefully, but human writing can vary.\",\"creator_id\":\"writer1\"}"
 ```
 
 ```json
 {
-  "confidence": 0.3695,
-  "content_id": "3a0ed7d8-6a89-41ab-b255-fbc1a802326b",
+  "combined_score": 0.2904,
+  "confidence": 0.2904,
+  "content_id": "99874186-e0b3-4ba2-ac25-19c84ff2aaef",
   "guess": "ai",
   "label": "unsure",
-  "model_score": 0.3695,
-  "style_score": null
+  "model_score": 0.1709,
+  "style_score": 0.4099
 }
 ```
 
@@ -203,14 +212,14 @@ C:\> curl.exe "http://127.0.0.1:5000/log?limit=5"
   "count": 1,
   "entries": [
     {
-      "combined_score": null,
-      "content_id": "3a0ed7d8-6a89-41ab-b255-fbc1a802326b",
+      "combined_score": 0.2904,
+      "content_id": "99874186-e0b3-4ba2-ac25-19c84ff2aaef",
       "creator_id": "writer1",
       "guess": "ai",
       "label": null,
-      "model_score": 0.3695,
+      "model_score": 0.1709,
       "status": "decided",
-      "style_score": null
+      "style_score": 0.4099
     }
   ]
 }
