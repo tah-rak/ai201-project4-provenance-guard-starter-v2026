@@ -148,14 +148,17 @@ to the human side while preserving the disagreement in the score.
 
 | Label | Score range | The exact text a reader sees |
 |---|---|---|
-| high-confidence human |  |  |
-| unsure |  |  |
-| high-confidence AI |  |  |
+| high-confidence human | 0.00–0.35 | We think this was probably written by a person. |
+| unsure | 0.35–0.65 | We are not sure who wrote this. Please treat the result as uncertain. |
+| high-confidence AI | 0.65–1.00 | We think this was probably written by AI. |
 
 **Why I worded the "unsure" one this way:**
 <!-- It's the hardest of the three. It has to admit uncertainty without
      sounding like an accusation, because the person reading it may well have
      written every word themselves. -->
+
+The unsure label avoids accusing the writer when the signals do not provide
+enough evidence for a high-confidence decision.
 
 
 
@@ -174,18 +177,18 @@ to the human side while preserving the disagreement in the score.
      diagnostics. -->
 
 ```bash
-C:\> curl.exe -X POST http://127.0.0.1:5000/submit -H "Content-Type: application/json" -d "{\"text\":\"The system follows a clear process. It handles each request carefully, but human writing can vary.\",\"creator_id\":\"writer1\"}"
+C:\> curl.exe -X POST http://127.0.0.1:5000/submit -H "Content-Type: application/json" -d "{\"text\":\"I walked home in the rain and noticed a blue bird beside the road.\",\"creator_id\":\"writer1\"}"
 ```
 
 ```json
 {
-  "combined_score": 0.2904,
-  "confidence": 0.2904,
-  "content_id": "99874186-e0b3-4ba2-ac25-19c84ff2aaef",
-  "guess": "ai",
-  "label": "unsure",
-  "model_score": 0.1709,
-  "style_score": 0.4099
+  "combined_score": 0.5544,
+  "confidence": 0.5544,
+  "content_id": "856a98b6-7b06-4aa7-9f03-85063747076e",
+  "guess": "unsure",
+  "label": "We are not sure who wrote this. Please treat the result as uncertain.",
+  "model_score": 0.4421,
+  "style_score": 0.6667
 }
 ```
 
