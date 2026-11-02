@@ -64,8 +64,14 @@ def sentence_length_spread(text: str) -> float:
     `stdev` raises on fewer than two values. Decide what that should return
     before the attack set decides for you.
     """
-    # TODO: replace this
-    return 0.0
+    lengths = [len(words(sentence)) for sentence in sentences(text)]
+    if len(lengths) < 2:
+        return 0.0
+
+    mean_length = statistics.mean(lengths)
+    if mean_length == 0:
+        return 0.0
+    return statistics.stdev(lengths) / mean_length
 
 
 def type_token_ratio(text: str) -> float:
@@ -80,8 +86,10 @@ def type_token_ratio(text: str) -> float:
     directly comparable on it, and if your test inputs vary a lot in length,
     that alone can look like a signal.
     """
-    # TODO: replace this
-    return 0.0
+    token_list = words(text)
+    if not token_list:
+        return 0.0
+    return len(set(token_list)) / len(token_list)
 
 
 def punctuation_density(text: str) -> float:
@@ -94,8 +102,11 @@ def punctuation_density(text: str) -> float:
         more interesting than full stops, because they vary more between
         writers.
     """
-    # TODO: replace this
-    return 0.0
+    token_list = words(text)
+    if not token_list:
+        return 0.0
+    punctuation_count = len(re.findall(r"[,;:!?—-]", text))
+    return punctuation_count / len(token_list)
 
 
 # ── Combining them ───────────────────────────────────────────────────────────
@@ -122,8 +133,20 @@ def style_signal(text: str) -> float:
     you trust it. Plain and ordinary, not formal: formal prose reads as *human*
     to signal one, and it is plain writing that gets accused.
     """
-    # TODO: replace this
-    return 0.5
+    spread = sentence_length_spread(text)
+    vocabulary_variety = type_token_ratio(text)
+    punctuation = punctuation_density(text)
+
+    # Low variation, low vocabulary variety, and sparse punctuation are
+    # treated as more AI-like. Each component is normalized to 0–1 first.
+    spread_score = 1.0 - min(spread, 1.0)
+    variety_score = 1.0 - min(max((vocabulary_variety - 0.35) / 0.5, 0.0), 1.0)
+    punctuation_score = 1.0 - min(punctuation / 0.15, 1.0)
+
+    return round(
+        (spread_score + variety_score + punctuation_score) / 3.0,
+        4,
+    )
 
 
 if __name__ == "__main__":
