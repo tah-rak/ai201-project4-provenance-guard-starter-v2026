@@ -166,13 +166,18 @@ changing who wrote the text.
      diagnostics. -->
 
 ```bash
-$ curl -X POST http://127.0.0.1:5000/submit \
-  -H "Content-Type: application/json" \
-  -d '{"text": "...", "creator_id": "..."}'
+C:\> curl.exe -X POST http://127.0.0.1:5000/submit -H "Content-Type: application/json" -d "{\"text\":\"I walked home in the rain and noticed a blue bird.\",\"creator_id\":\"writer1\"}"
 ```
 
 ```json
-
+{
+  "confidence": 0.3695,
+  "content_id": "3a0ed7d8-6a89-41ab-b255-fbc1a802326b",
+  "guess": "ai",
+  "label": "unsure",
+  "model_score": 0.3695,
+  "style_score": null
+}
 ```
 
 **An appeal**
@@ -190,11 +195,25 @@ $ curl -X POST http://127.0.0.1:5000/appeal \
 **What the log shows afterwards**
 
 ```bash
-$ curl "http://127.0.0.1:5000/log?limit=3"
+C:\> curl.exe "http://127.0.0.1:5000/log?limit=5"
 ```
 
 ```json
-
+{
+  "count": 1,
+  "entries": [
+    {
+      "combined_score": null,
+      "content_id": "3a0ed7d8-6a89-41ab-b255-fbc1a802326b",
+      "creator_id": "writer1",
+      "guess": "ai",
+      "label": null,
+      "model_score": 0.3695,
+      "status": "decided",
+      "style_score": null
+    }
+  ]
+}
 ```
 
 ---
