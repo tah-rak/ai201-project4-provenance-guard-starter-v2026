@@ -39,6 +39,37 @@
 <!-- The path a submission takes, from arriving to the label a reader sees.
      Six or seven steps — this is the trace you wrote in Milestone 1. -->
 
+1. A writer sends text and a `creator_id` to `POST /submit`.
+2. The service validates the JSON request and creates a `content_id`.
+3. The text is sent to `detector.py`, which calculates a model-based signal.
+4. The text is sent to `stylometry.py`, which calculates a writing-style signal.
+5. `scoring.py` combines both signals into one confidence score.
+6. The score is converted into a high-confidence human, unsure, or
+   high-confidence AI label.
+7. The service returns the `content_id`, guess, confidence, label, and signal
+   scores to the reader.
+
+### False-positive trace
+
+A real writer submits plain, predictable writing. The model signal may produce
+a high AI-likelihood score because predictable language is not proof of AI
+authorship. If the combined score crosses the AI threshold, the writer sees a
+high-confidence AI label even though the work is theirs. The writer can call
+`POST /appeal` with the `content_id` and their reasoning; the service records
+the appeal and changes the item status to `under_review`.
+
+### Endpoint contracts
+
+`POST /submit`
+
+- Request JSON: `{"text": "string", "creator_id": "string"}`
+- Response JSON: `content_id`, `guess`, `confidence`, `label`,
+  `model_score`, and `style_score`
+
+`POST /appeal`
+
+- Request JSON: `{"content_id": "string", "reasoning": "string"}`
+- Response JSON: confirmation of the appeal and the `under_review` status
 
 
 ---
@@ -53,19 +84,32 @@
 
 ### Signal one — the model signal
 
-**What it measures:**
+**What it measures:** It measures how predictable the text is to a local
+language model using perplexity. Lower perplexity becomes a higher
+AI-likelihood score.
 
-**Why that might differ between human and AI writing:**
+**Why that might differ between human and AI writing:** AI-generated writing
+often follows likely word choices and predictable sentence patterns. Human
+writing may make unusual word choices or abrupt turns, which can be less
+predictable.
 
-**What it can't see:**
+**What it can't see:** It cannot determine authorship. It may falsely flag a
+human who writes plainly with common words, and it may miss AI writing that
+uses unusual or complex wording.
 
 ### Signal two — the style signal
 
-**What it measures:**
+**What it measures:** It measures the shape of the text: sentence-length
+variation, vocabulary variety, and punctuation usage, without interpreting the
+meaning.
 
-**Why that might differ between human and AI writing:**
+**Why that might differ between human and AI writing:** AI writing may have
+even sentence lengths and narrower vocabulary, while human writing may have
+more uneven sentence lengths and varied word choices.
 
-**What it can't see:**
+**What it can't see:** It cannot understand meaning or identify the author.
+Typos, quotations, or sentence changes can alter the measurements without
+changing who wrote the text.
 
 ### The combining rule
 
