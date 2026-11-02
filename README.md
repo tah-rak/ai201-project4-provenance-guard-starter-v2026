@@ -64,12 +64,13 @@ the appeal and changes the item status to `under_review`.
 
 - Request JSON: `{"text": "string", "creator_id": "string"}`
 - Response JSON: `content_id`, `guess`, `confidence`, `label`,
-  `model_score`, and `style_score`
+  `model_score`, `style_score`, and `combined_score`
 
 `POST /appeal`
 
 - Request JSON: `{"content_id": "string", "reasoning": "string"}`
-- Response JSON: confirmation of the appeal and the `under_review` status
+- Response JSON: `content_id`, a confirmation message, and the
+  `under_review` status
 
 
 ---
@@ -234,15 +235,24 @@ C:\> curl.exe "http://127.0.0.1:5000/log?limit=5"
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* I asked for help tracing a submission and identifying
+  the blind spots in `detector.py` and `stylometry.py`.
+- *What came back:* The explanation identified predictability as the model
+  signal, sentence and vocabulary shape as the style signal, and explained
+  that neither signal can prove authorship.
+- *What I changed:* I added the submission path, signal descriptions, blind
+  spots, and false-positive trace to this README.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* I asked for step-by-step CMD guidance to test the
+  service and wire the detector into `/submit`.
+- *What came back:* The guidance separated route testing from signal testing,
+  then showed how to generate a `content_id`, log the model score, and inspect
+  `GET /log`.
+- *What I changed:* I implemented `/submit` in `app.py`, then added the
+  stylometry signal, combined score, labels, and appeal flow in later
+  milestones.
 
 <!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
 
