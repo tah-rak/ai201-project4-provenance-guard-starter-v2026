@@ -154,7 +154,7 @@ def health():
 # ── YOU BUILD THIS ────────────────────────────────────────────────────────────
 
 @app.post("/submit")
-# @limiter.limit(f"{config.RATE_LIMIT_PER_MINUTE}/minute;{config.RATE_LIMIT_PER_DAY}/day")
+@limiter.limit(f"{config.RATE_LIMIT_PER_MINUTE}/minute;{config.RATE_LIMIT_PER_DAY}/day")
 def submit():
     """
     Take a piece of text, decide about it, log the decision, answer.
@@ -202,10 +202,32 @@ def submit():
     what should this do when `text` is missing, empty, or enormous? A crash on
     a malformed input is one of the most common real failures there is.
     """
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        audit.log_rejection(creator_id="unknown", reason="invalid_json_body")
+        return jsonify({"error": "request body must be a JSON object"}), 400
 
-    text = payload.get("text", "")
     creator_id = payload.get("creator_id", "unknown")
+    if not isinstance(creator_id, str) or not creator_id.strip():
+        audit.log_rejection(creator_id="unknown", reason="invalid_creator_id")
+        return jsonify({"error": "creator_id is required"}), 400
+
+    text = payload.get("text")
+    if not isinstance(text, str) or not text.strip():
+        audit.log_rejection(creator_id=creator_id, reason="missing_or_empty_text")
+        return jsonify({"error": "text is required and must not be empty"}), 400
+    if len(text) > config.MAX_TEXT_LENGTH:
+        audit.log_rejection(
+            creator_id=creator_id,
+            reason="text_too_large",
+            text_length=len(text),
+            max_text_length=config.MAX_TEXT_LENGTH,
+        )
+        return jsonify({
+            "error": "text is too large",
+            "max_text_length": config.MAX_TEXT_LENGTH,
+        }), 400
+
     content_id = str(uuid.uuid4())
     model_score = detector.model_signal(text)
     style_score = stylometry.style_signal(text)

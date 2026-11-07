@@ -260,7 +260,7 @@ C:\> curl.exe "http://127.0.0.1:5000/log?limit=5"
 
 ## Rate Limiting
 
-**My limits:** ___ per minute, ___ per day
+**My limits:** 10 per minute, 200 per day
 
 **Why those numbers and not others:**
 <!-- Think about two people: a real writer submitting their own work a few
@@ -268,17 +268,25 @@ C:\> curl.exe "http://127.0.0.1:5000/log?limit=5"
      thresholds. Your numbers have to be liveable for the first and hostile to
      the second. -->
 
-**What a caller counts as:** <!-- per address, or per creator_id? They fail
-differently — one script can look like a thousand callers, and one household
-can look like one. -->
+Ten submissions per minute allows a real writer to submit several pieces
+without interruption, while limiting rapid threshold-mapping scripts. The
+daily limit of 200 allows continued normal use but prevents unlimited probing.
+
+**What a caller counts as:** A caller is counted by `creator_id` when it is a
+valid non-empty string; otherwise the request falls back to the remote address.
 
 **The run of status codes when I pushed past it:**
 
 <!-- python run_attacks.py --flood 15 -->
 
 ```
-
+200 200 200 200 200 200 200 200 200 200 429 429 429 429 429
 ```
+
+The flood run produced 10 accepted requests and 5 rate-limited requests. The
+service reported `"rate_limiting": true` from `GET /health`. Rate-limited
+requests were recorded in `logs/audit.jsonl` with
+`"event": "rejected"` and `"reason": "rate_limited"`.
 
 ---
 
