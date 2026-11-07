@@ -446,6 +446,19 @@ short for the detector with HTTP 400 and record the reason.
 | 4. Valid appeals recorded and moved under review | 1 of 1 | 1/1 | 1/1 | 1/1 | MET |
 | 5. Missing, empty, and oversized text rejected | 4 of 4 | 4/4 | 4/4 | 4/4 | MET |
 
+**How each verdict was decided:**
+
+- **Criterion 1 — MET:** Each of the three trials had `0/10` human samples
+  labelled high-confidence AI, which is within the `≤ 1/10` target.
+- **Criterion 2 — MET:** The score difference was `0.2632` in every trial,
+  above the required `0.20`.
+- **Criterion 3 — MISSED:** Each trial reached only the unsure and
+  high-confidence AI labels, not all three required labels.
+- **Criterion 4 — MET:** The manual appeal returned confirmation, changed
+  status to `under_review`, and added an appeal event to the audit log.
+- **Criterion 5 — MET:** All four invalid-input cases returned HTTP 400 in
+  all three trials.
+
 **Real output from one trial**, pasted as text, naming the file and function
 that produced it:
 
@@ -533,6 +546,38 @@ template-like human writing was often classified as AI, while typos,
 quotations, and sentence-shape changes moved AI text toward the human or
 unsure bands. Those are signal-one and signal-two blind spots rather than
 route failures.
+
+**Broken-attack diagnoses:**
+
+- **Evasion (`EV01`–`EV09`, 9 attacks):** The stage was primarily the style
+  signal. Typos, broken-up sentences, quotations, punctuation padding, and
+  human-looking opening text changed sentence-length spread, vocabulary
+  variety, or punctuation density, so AI text moved into the human or unsure
+  bands. For `EV04` and `EV08`, the model signal was also vulnerable because
+  unusual wording or short context changed perplexity. The combining rule
+  averaged these lowered signals, allowing the evasion to survive.
+- **False positives (`FP02`–`FP07`, 6 attacks):** The stage was the two
+  signals and then the combining rule. Formal, technical, template-like, and
+  repetitive human writing looked predictable and stylistically regular, so
+  both signals rose and the equal-weight average crossed the `0.65` AI
+  threshold. This is a false accusation risk, not a route or logging failure.
+- **Malformed input (`MF01`, `MF02`, `MF04`–`MF08`, and `RQ02`, 8 attacks):**
+  The stage was route validation. Before the minimum-word fix, `MF02` reached
+  the detector with too little text and caused HTTP 500; the other short or
+  non-text cases were rejected or accepted according to the existing
+  validation rules. `RQ02` was accepted because the route permits a missing
+  `creator_id` and falls back to the caller address. This is a validation
+  policy gap, not a signal or label-mapping problem.
+- **Prompt injection and flood attacks:** These were held. The route treated
+  prompt text as ordinary content, and the rate-limit route rejected the
+  excess requests with HTTP 429 and logged them.
+
+The main pattern is that the route and controls are reliable after the
+minimum-word fix, while the signal stages cannot distinguish authorship from
+predictability or surface style. The targets were not all too low: criterion
+3 was appropriately missed because the test set did not reach the human
+label. If I tightened one criterion, I would make criterion 1 stricter
+after collecting a larger, genuinely human calibration set.
 
 
 
