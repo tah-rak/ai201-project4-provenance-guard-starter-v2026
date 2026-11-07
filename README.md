@@ -259,6 +259,18 @@ The relevant entries were:
   stylometry signal, combined score, labels, and appeal flow in later
   milestones.
 
+**Moment 3**
+
+- *What I asked for:* I asked for help interpreting the attack-set failures
+  and deciding which one improvement to make.
+- *What came back:* The diagnosis grouped the failures by mechanism instead
+  of treating every attack as a separate defect. It identified the
+  one-character detector crash as a route-validation problem and the
+  false-positive and evasion cases as limitations of the two signals.
+- *What I changed:* I added the minimum-word validation, reran the full
+  attack set and three-trial evaluation, and documented the before/after
+  tradeoff in this README.
+
 <!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
 
 ---
@@ -669,30 +681,41 @@ controlled HTTP 400 instead of an HTTP 500.
 
 ## What's Still Broken
 
-The remaining false positives are formal, rubric-shaped, technical, or
-repetitive human writing. I would add a larger human calibration set and
-consider widening the unsure band, but I stopped because that could make the
-service miss more AI text and would require retesting all thresholds.
+The after attack run still has these evasion attacks getting through:
+`EV01`–`EV09`. I would add signals that are less sensitive to typos,
+quotations, punctuation padding, and sentence reshaping, then retest the
+whole attack set. I stopped after one improvement because changing the
+signals would be a second improvement and would require recalibrating the
+thresholds.
 
-The remaining evasion cases exploit the same signal blind spots: editing,
-typos, quotations, and sentence-shape changes can make AI text look less
-predictable or more stylistically varied. A stronger solution would require
-additional independently measured signals and a larger evaluation set.
+The false-positive attacks `FP02`–`FP07` still get high-confidence AI labels.
+I would collect a larger set of formal, technical, non-native, and
+template-shaped human writing and widen the unsure band only after measuring
+the cost to AI-text recall. I stopped because the current two-signal system
+cannot prove authorship, and changing the threshold without new calibration
+would only move the error between labels.
 
-Criterion 3 is still missed because the current label-coverage examples do
-not include a score below `0.35`. I would add a longer, varied human sample
-and rerun all three trials rather than changing the label thresholds just to
-pass the criterion.
+Malformed input `MF03` still reaches the signals because control characters
+are accepted as text, and `RQ02` is accepted because a missing
+`creator_id` uses the remote-address fallback. I would reject control-only
+text and decide whether `creator_id` should be required for production use.
+I stopped because the chosen improvement was specifically the crash-causing
+short input; adding more validation would be a separate change.
+
+Criterion 3 is still `MISSED`: the label-coverage scenario reaches unsure
+and high-confidence AI, but not high-confidence human. I would add a
+calibration sample that reliably scores below `0.35` and rerun all three
+trials. I stopped rather than lowering the target because the criterion was
+measurable and the result was an honest miss.
 
 
 
 **The trade I'd make if this ran for real:**
 
-I would favor the wider unsure band and the appeal path over aggressive
-high-confidence accusations. That lets more AI text pass without a firm
-label, but it makes the platform and reviewers pay the cost of investigating
-more uncertain submissions instead of making real writers pay for false
-accusations.
+I would favor a wider unsure band and the appeal path over aggressive
+high-confidence accusations, because fewer real writers would be wrongly
+accused. The platform and human reviewers would pay by investigating more
+uncertain submissions, while more AI text would pass without a firm label.
 
 
 
