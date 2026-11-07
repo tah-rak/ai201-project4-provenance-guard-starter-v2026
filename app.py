@@ -227,6 +227,17 @@ def submit():
             "error": "text is too large",
             "max_text_length": config.MAX_TEXT_LENGTH,
         }), 400
+    if len(stylometry.words(text)) < config.MIN_TEXT_WORDS:
+        audit.log_rejection(
+            creator_id=creator_id,
+            reason="text_too_short",
+            word_count=len(stylometry.words(text)),
+            min_text_words=config.MIN_TEXT_WORDS,
+        )
+        return jsonify({
+            "error": "text is too short to score",
+            "min_text_words": config.MIN_TEXT_WORDS,
+        }), 400
 
     content_id = str(uuid.uuid4())
     model_score = detector.model_signal(text)

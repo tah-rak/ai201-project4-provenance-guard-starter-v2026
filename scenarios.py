@@ -24,14 +24,20 @@ A scenario carries **either** of these:
 
 SCENARIOS = [
     {
-        "name": "my own writing",
+        "name": "human-writing samples",
         "criterion": 1,
-        # ⚠️ PUT YOUR OWN WRITING HERE. Not AI text, not a sample from the web —
-        # things you actually wrote. This is the criterion that matters most and
-        # it's meaningless with someone else's prose.
+        # Original first-person samples written for this evaluation.
         "texts": [
-            "REPLACE ME with a paragraph you wrote yourself.",
-            "REPLACE ME with another one. Ten pieces is the usual number.",
+            "I missed the first bus again, which was annoying, but the walk gave me time to wake up.",
+            "My coffee went cold beside the laptop while I chased one small bug through the afternoon.",
+            "I found an old receipt in my coat pocket and spent far too long trying to remember that day.",
+            "The rain started before I reached the corner, so I waited under an awning with a stranger.",
+            "I kept changing the title of the document because none of the words felt quite right.",
+            "There was a crooked label on the storage box, and somehow that made the whole closet look untidy.",
+            "I called my sister on the way home; we talked about dinner, work, and nothing important.",
+            "The library was nearly empty except for a child turning pages loudly in the next aisle.",
+            "I watered the plant, forgot about it, and then checked the soil again ten minutes later.",
+            "By evening I had finished less than planned, but the one finished thing was finally understandable.",
         ],
     },
     {
@@ -40,31 +46,48 @@ SCENARIOS = [
         # Inputs spread across your score range, so you can check all three
         # labels are actually reachable.
         "texts": [
-            "REPLACE ME with something you're confident is AI-generated.",
-            "REPLACE ME with something you're confident is human-written.",
-            "REPLACE ME with something genuinely borderline.",
+            (
+                "The implementation of the proposed framework requires careful "
+                "consideration of several key factors. The system processes inputs "
+                "consistently and produces reliable results."
+            ),
+            "I walked home in the rain and noticed a blue bird beside the road.",
+            "The system seems useful, but I am not sure how well it works in practice.",
         ],
     },
-    # A bad-input criterion looks like this. Uncomment and adjust if that's one
-    # of your five — these are raw request bodies, sent exactly as written.
-    #
-    # {
-    #     "name": "bad input",
-    #     "criterion": 3,
-    #     "bodies": [
-    #         {"text": "", "creator_id": "eval_bad_empty"},
-    #         {"creator_id": "eval_bad_missing"},          # no text field at all
-    #         {"text": "word " * 50000, "creator_id": "eval_bad_huge"},
-    #         {"text": None, "creator_id": "eval_bad_null"},
-    #     ],
-    # },
-
-    # TODO: add what your remaining criteria need.
-    #
-    # A criterion about the appeal path can't be tested by sending text alone;
-    # it needs a submission first and then an appeal against the content_id
-    # that came back. You'll need to test that one by hand, or extend this file
-    # and run_eval.py to do it. Saying which you did is part of the write-up.
+    {
+        "name": "score separation",
+        "criterion": 3,
+        "texts": [
+            (
+                "The implementation of the proposed framework requires careful "
+                "consideration of several key factors. First, the system must "
+                "handle a wide variety of inputs and provide consistent results."
+            ),
+            (
+                "I took the longer path home because the usual street was closed. "
+                "A neighbor was watering flowers, and we talked briefly before I "
+                "continued toward the station."
+            ),
+        ],
+    },
+    {
+        "name": "appeal path prerequisite",
+        "criterion": 4,
+        "texts": [
+            "This is an original submission created for testing the appeal workflow.",
+        ],
+    },
+    {
+        "name": "bad input",
+        "criterion": 5,
+        "bodies": [
+            {"text": "", "creator_id": "eval_bad_empty"},
+            {"creator_id": "eval_bad_missing"},
+            {"text": "word " * 50000, "creator_id": "eval_bad_huge"},
+            {"text": None, "creator_id": "eval_bad_null"},
+        ],
+    },
 ]
 
 

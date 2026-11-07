@@ -46,6 +46,7 @@ DETECTOR_MODEL = os.getenv("AI201_DETECTOR_MODEL", "gpt2")
 # 300 words, which is enough for the signal to mean something.
 DETECTOR_MAX_TOKENS = 400
 MAX_TEXT_LENGTH = 10000
+MIN_TEXT_WORDS = 3
 
 
 # ─── Scoring (Milestone 4) ───────────────────────────────────────────────────

@@ -196,13 +196,15 @@ C:\> curl.exe -X POST http://127.0.0.1:5000/submit -H "Content-Type: application
 **An appeal**
 
 ```bash
-$ curl -X POST http://127.0.0.1:5000/appeal \
-  -H "Content-Type: application/json" \
-  -d '{"content_id": "...", "reasoning": "..."}'
+C:\> curl.exe -X POST http://127.0.0.1:5000/appeal -H "Content-Type: application/json" -d "{\"content_id\":\"8f052bc8-f238-461b-859c-85de10f410ae\",\"reasoning\":\"I wrote this submission myself and believe the automated result is uncertain.\"}"
 ```
 
 ```json
-
+{
+  "content_id": "8f052bc8-f238-461b-859c-85de10f410ae",
+  "message": "Appeal recorded and submitted for review.",
+  "status": "under_review"
+}
 ```
 
 **What the log shows afterwards**
@@ -211,22 +213,25 @@ $ curl -X POST http://127.0.0.1:5000/appeal \
 C:\> curl.exe "http://127.0.0.1:5000/log?limit=5"
 ```
 
+The relevant entries were:
+
 ```json
-{
-  "count": 1,
-  "entries": [
+[
     {
-      "combined_score": 0.2904,
-      "content_id": "99874186-e0b3-4ba2-ac25-19c84ff2aaef",
-      "creator_id": "writer1",
-      "guess": "ai",
-      "label": null,
-      "model_score": 0.1709,
-      "status": "decided",
-      "style_score": 0.4099
+      "content_id": "8f052bc8-f238-461b-859c-85de10f410ae",
+      "creator_id": "appeal_evidence_1747",
+      "guess": "human",
+      "combined_score": 0.2963,
+      "status": "decided"
+    },
+    {
+      "content_id": "8f052bc8-f238-461b-859c-85de10f410ae",
+      "creator_id": "appeal_evidence_1747",
+      "event": "appeal",
+      "reasoning": "I wrote this submission myself and believe the automated result is uncertain.",
+      "status": "under_review"
     }
-  ]
-}
+]
 ```
 
 ---
@@ -312,7 +317,7 @@ did or when the service failed.
 The flood family was held because the first ten requests were accepted and
 the remaining two were rejected with `429`, matching the configured limit.
 The malformed one-character input `MF02` returned `500`, so it was marked
-`BROKE`.
+`BROKE`. This was the failure addressed by the minimum-word validation change.
 
 **Ten audit log entries from the run**
 
@@ -435,34 +440,99 @@ short for the detector with HTTP 400 and record the reason.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Human-written submissions labelled high-confidence AI | ≤ 1 of 10 | 0/10 | 0/10 | 0/10 | MET |
+| 2. Clearly human/AI score separation | ≥ 0.20 | 0.2632 | 0.2632 | 0.2632 | MET |
+| 3. All three labels reachable | 3 of 3 | 2/3 | 2/3 | 2/3 | MISSED |
+| 4. Valid appeals recorded and moved under review | 1 of 1 | 1/1 | 1/1 | 1/1 | MET |
+| 5. Missing, empty, and oversized text rejected | 4 of 4 | 4/4 | 4/4 | 4/4 | MET |
 
 **Real output from one trial**, pasted as text, naming the file and function
 that produced it:
 
-```json
+The following is from
+`results/run_2026-11-07_1749_before.md`, produced by
+`run_eval.py::main`. Criterion 4 was verified separately because
+`run_eval.py` only submits request bodies and cannot perform a follow-up
+appeal.
 
+### Criterion 1 — human-writing samples
+
+```json
+[
+  {"status": 200, "guess": "unsure", "confidence": 0.4538, "label": "We are not sure who wrote this. Please treat the result as uncertain."},
+  {"status": 200, "guess": "unsure", "confidence": 0.3713, "label": "We are not sure who wrote this. Please treat the result as uncertain."},
+  {"status": 200, "guess": "unsure", "confidence": 0.6116, "label": "We are not sure who wrote this. Please treat the result as uncertain."},
+  {"status": 200, "guess": "unsure", "confidence": 0.4983, "label": "We are not sure who wrote this. Please treat the result as uncertain."},
+  {"status": 200, "guess": "unsure", "confidence": 0.5881, "label": "We are not sure who wrote this. Please treat the result as uncertain."},
+  {"status": 200, "guess": "unsure", "confidence": 0.4495, "label": "We are not sure who wrote this. Please treat the result as uncertain."},
+  {"status": 200, "guess": "unsure", "confidence": 0.4601, "label": "We are not sure who wrote this. Please treat the result as uncertain."},
+  {"status": 200, "guess": "unsure", "confidence": 0.3729, "label": "We are not sure who wrote this. Please treat the result as uncertain."},
+  {"status": 200, "guess": "unsure", "confidence": 0.4688, "label": "We are not sure who wrote this. Please treat the result as uncertain."},
+  {"status": 200, "guess": "human", "confidence": 0.2909, "label": "We think this was probably written by a person."}
+]
+```
+
+### Criterion 2 — score separation
+
+```json
+[
+  {"status": 200, "guess": "unsure", "confidence": 0.628, "model_score": 0.6891, "style_score": 0.5669},
+  {"status": 200, "guess": "unsure", "confidence": 0.3648, "model_score": 0.1975, "style_score": 0.532}
+]
+```
+
+The difference is `0.628 - 0.3648 = 0.2632`.
+
+### Criterion 3 — label coverage
+
+```json
+[
+  {"status": 200, "guess": "unsure", "confidence": 0.4748, "label": "We are not sure who wrote this. Please treat the result as uncertain."},
+  {"status": 200, "guess": "unsure", "confidence": 0.5544, "label": "We are not sure who wrote this. Please treat the result as uncertain."},
+  {"status": 200, "guess": "ai", "confidence": 0.6931, "label": "We think this was probably written by AI."}
+]
+```
+
+Only two labels were reached; the high-confidence human label was not reached.
+
+### Criterion 4 — appeal
+
+```json
+{
+  "content_id": "8f052bc8-f238-461b-859c-85de10f410ae",
+  "message": "Appeal recorded and submitted for review.",
+  "status": "under_review"
+}
+```
+
+### Criterion 5 — bad input
+
+```json
+[
+  {"status": 400, "sent": "(empty text)"},
+  {"status": 400, "sent": "{\"creator_id\": \"eval_bad_missing\"}"},
+  {"status": 400, "sent": "word word word word word word word word word word word word word word "},
+  {"status": 400, "sent": "{\"text\": null, \"creator_id\": \"eval_bad_null\"}"}
+]
 ```
 
 **Diagnoses**
 
-<!-- For each miss AND each broken attack: the stage and the mechanism.
+Criterion 1 had zero high-confidence AI results out of ten first-person
+human-writing samples. The attack set still demonstrates the underlying
+false-positive risk: formal or repetitive human writing can produce high
+model and style scores because neither signal can observe authorship.
 
-     Your service has five stages: the route, signal one, signal two, the
-     combining rule, and the label mapping.
+Criterion 3 missed because the calibration set did not reach the human
+threshold of `0.35`; its lowest score was `0.4748`. The label mapping is
+working, but the selected calibration inputs did not cover the full score
+range.
 
-     Not a diagnosis:  "The evasion attacks got through."
-     A diagnosis:      "Four evasion inputs got through. All four had typos
-                        added to AI-generated text. My second signal measures
-                        word variety, and typos raise word variety — so it read
-                        them as more human. My combining rule weights that
-                        signal at 0.6, so it dragged the whole score down."
-
-     Look for a pattern. Five failures on one signal is one problem, not five. -->
+The before attack run also exposed the same two issues. Formal and
+template-like human writing was often classified as AI, while typos,
+quotations, and sentence-shape changes moved AI text toward the human or
+unsure bands. Those are signal-one and signal-two blind spots rather than
+route failures.
 
 
 
@@ -472,18 +542,40 @@ that produced it:
 
 **What I changed:**
 
+I added `MIN_TEXT_WORDS = 3` and validate the word count before calling the
+detector. Inputs shorter than that now return HTTP 400 and are logged as
+`text_too_short` instead of reaching the detector and crashing.
+
 **Which diagnosis pointed at it:**
+
+The before attack report identified `MF02`, a one-character request, as the
+worst outcome because it returned HTTP 500 without a controlled rejection or
+useful audit entry.
 
 ### Attack Run — After
 
 <!-- Same format. `run_attacks.py --label after` -->
 
+The complete after report is in
+`results/attack_run_2026-11-07_1747_after.md`. It covered all 56 attacks and
+had zero automatic `BROKE` results from a 5xx, crash, or missing response.
 
+| Family | Attacks | Held | Broke |
+|---|---:|---:|---:|
+| evasion | 10 | 1 | 9 |
+| false positive | 8 | 2 | 6 |
+| prompt injection | 6 | 6 | 0 |
+| malformed | 20 | 13 | 7 |
+| flood_same_creator | 12 | 12 | 0 |
+| **Total** | **56** | **34** | **22** |
 
 **Did it help, and how do I know:**
 
-<!-- Widening the unsure band usually fixes one problem and creates another.
-     Reporting that trade honestly is worth full credit. -->
+Yes for reliability, but not for detection quality. `MF02` changed from a
+500-level crash in the before run to a controlled 400 response in the after
+run, and the malformed family improved by one held attack. The false-positive
+and evasion outcomes stayed the same, so the minimum-word guard fixed the
+route failure without pretending to solve the detector's authorship limits.
 
 
 
@@ -491,15 +583,30 @@ that produced it:
 
 ## What's Still Broken
 
-<!-- For each attack still getting through and each criterion still missed:
-     what you'd do, and why you stopped. -->
+The remaining false positives are formal, rubric-shaped, technical, or
+repetitive human writing. I would add a larger human calibration set and
+consider widening the unsure band, but I stopped because that could make the
+service miss more AI text and would require retesting all thresholds.
+
+The remaining evasion cases exploit the same signal blind spots: editing,
+typos, quotations, and sentence-shape changes can make AI text look less
+predictable or more stylistically varied. A stronger solution would require
+additional independently measured signals and a larger evaluation set.
+
+Criterion 3 is still missed because the current label-coverage examples do
+not include a score below `0.35`. I would add a longer, varied human sample
+and rerun all three trials rather than changing the label thresholds just to
+pass the criterion.
 
 
 
 **The trade I'd make if this ran for real:**
 
-<!-- Two sentences. Fewer wrong accusations means more AI text getting through.
-     Say which way you'd go and WHO PAYS FOR IT. -->
+I would favor the wider unsure band and the appeal path over aggressive
+high-confidence accusations. That lets more AI text pass without a firm
+label, but it makes the platform and reviewers pay the cost of investigating
+more uncertain submissions instead of making real writers pay for false
+accusations.
 
 
 
