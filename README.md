@@ -295,18 +295,135 @@ requests were recorded in `logs/audit.jsonl` with
 <!-- Every attack with its outcome and a held-or-broke mark.
      `run_attacks.py --label before` produces the table. -->
 
+The complete 56-attack report is in
+`results/attack_run_2026-11-07_1715_before.md`. I marked each result as
+`HELD` when the attack did not achieve its stated target and `BROKE` when it
+did or when the service failed.
 
+| Family | Attacks | Held | Broke |
+|---|---:|---:|---:|
+| evasion | 10 | 1 | 9 |
+| false positive | 8 | 2 | 6 |
+| prompt injection | 6 | 6 | 0 |
+| malformed | 20 | 12 | 8 |
+| flood_same_creator | 12 | 12 | 0 |
+| **Total** | **56** | **33** | **23** |
+
+The flood family was held because the first ten requests were accepted and
+the remaining two were rejected with `429`, matching the configured limit.
+The malformed one-character input `MF02` returned `500`, so it was marked
+`BROKE`.
 
 **Ten audit log entries from the run**
 
 <!-- Choose entries that show the interesting failures, not the ten easiest. -->
 
 ```json
-
+[
+  {
+    "creator_id": "flood_tester",
+    "event": "rejected",
+    "limit": "10 per 1 minute",
+    "reason": "rate_limited",
+    "status": "rejected"
+  },
+  {
+    "creator_id": "flood_tester",
+    "event": "rejected",
+    "limit": "10 per 1 minute",
+    "reason": "rate_limited",
+    "status": "rejected"
+  },
+  {
+    "content_id": "60e16eab-efee-4028-84bc-12c5366ade17",
+    "creator_id": "attacker_EV01",
+    "guess": "human",
+    "model_score": 0.1635,
+    "style_score": 0.5085,
+    "combined_score": 0.336,
+    "label": "We think this was probably written by a person.",
+    "status": "decided"
+  },
+  {
+    "content_id": "facd800e-d378-4fb6-aea6-856e101552f5",
+    "creator_id": "attacker_EV02",
+    "guess": "unsure",
+    "model_score": 0.5943,
+    "style_score": 0.3031,
+    "combined_score": 0.4487,
+    "label": "We are not sure who wrote this. Please treat the result as uncertain.",
+    "status": "decided"
+  },
+  {
+    "content_id": "9b661820-bfe7-49d6-9355-ae6a257e97b1",
+    "creator_id": "attacker_FP01",
+    "guess": "unsure",
+    "model_score": 0.6175,
+    "style_score": 0.5652,
+    "combined_score": 0.5914,
+    "label": "We are not sure who wrote this. Please treat the result as uncertain.",
+    "status": "decided"
+  },
+  {
+    "content_id": "3c3163b1-f969-4fd8-bba8-06557367dab7",
+    "creator_id": "attacker_FP02",
+    "guess": "ai",
+    "model_score": 0.7387,
+    "style_score": 0.6503,
+    "combined_score": 0.6945,
+    "label": "We think this was probably written by AI.",
+    "status": "decided"
+  },
+  {
+    "content_id": "3f62af93-b29b-4ab2-b1e0-e6e6e1fef0",
+    "creator_id": "attacker_MF03",
+    "guess": "human",
+    "model_score": 0.0,
+    "style_score": 0.6667,
+    "combined_score": 0.3333,
+    "label": "We think this was probably written by a person.",
+    "status": "decided"
+  },
+  {
+    "content_id": "81408504-28c3-4d38-892d-612e67ee5584",
+    "creator_id": "attacker_MF05",
+    "guess": "ai",
+    "model_score": 0.9976,
+    "style_score": 0.6667,
+    "combined_score": 0.8321,
+    "label": "We think this was probably written by AI.",
+    "status": "decided"
+  },
+  {
+    "content_id": "f972c41b-7bd3-46d7-bb63-9e8876152c7f",
+    "creator_id": "attacker_MF07",
+    "guess": "ai",
+    "model_score": 0.9064,
+    "style_score": 1.0,
+    "combined_score": 0.9532,
+    "label": "We think this was probably written by AI.",
+    "status": "decided"
+  },
+  {
+    "content_id": "2925a0f6-4bfd-4c61-8d82-535e4a86aca4",
+    "creator_id": "unknown",
+    "guess": "unsure",
+    "model_score": 0.2395,
+    "style_score": 0.6667,
+    "combined_score": 0.4531,
+    "label": "We are not sure who wrote this. Please treat the result as uncertain.",
+    "status": "decided"
+  }
+]
 ```
 
 **The single worst outcome** — the one I'd least want to explain to a writer
 whose work got caught by it:
+
+`MF02` was a one-character submission that caused HTTP 500. The failure
+happened before a controlled rejection and therefore produced neither a useful
+decision nor a clear audit entry. The route should reject text that is too
+short for the detector with HTTP 400 and record the reason.
 
 
 
