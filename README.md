@@ -602,7 +602,7 @@ useful audit entry.
 <!-- Same format. `run_attacks.py --label after` -->
 
 The complete after report is in
-`results/attack_run_2026-11-07_1747_after.md`. It covered all 56 attacks and
+`results/attack_run_2026-11-07_1756_after.md`. It covered all 56 attacks and
 had zero automatic `BROKE` results from a 5xx, crash, or missing response.
 
 | Family | Attacks | Held | Broke |
@@ -622,6 +622,47 @@ run, and the malformed family improved by one held attack. The false-positive
 and evasion outcomes stayed the same, so the minimum-word guard fixed the
 route failure without pretending to solve the detector's authorship limits.
 
+### Criteria Run — After
+
+The after criteria run is the final verification of the same five scenarios
+after the input-validation change. Run it with:
+
+```cmd
+python run_eval.py --label after
+```
+
+Then paste the generated `results/run_*_after.md` evidence here and compare
+its five rows with the before table above. The expected change is criterion 5:
+short malformed inputs should remain controlled HTTP 400 responses. The
+validation change is not expected to improve the signal-based false positives,
+evasion results, score separation, or label coverage.
+
+The complete after criteria report is
+`results/run_2026-11-07_1756_after.md`, produced by `run_eval.py::main`.
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. Human-written submissions labelled high-confidence AI | ≤ 1 of 10 | 0/10 | 0/10 | 0/10 | MET |
+| 2. Clearly human/AI score separation | ≥ 0.20 | 0.2632 | 0.2632 | 0.2632 | MET |
+| 3. All three labels reachable | 3 of 3 | 2/3 | 2/3 | 2/3 | MISSED |
+| 4. Valid appeals recorded and moved under review | 1 of 1 | 1/1 | 1/1 | 1/1 | MET |
+| 5. Missing, empty, and oversized text rejected | 4 of 4 | 4/4 | 4/4 | 4/4 | MET |
+
+**Representative after-run output:**
+
+```json
+{
+  "criterion_1": {"status": 200, "guess": "human", "confidence": 0.2909},
+  "criterion_2": {"human_score": 0.3648, "ai_score": 0.628, "difference": 0.2632},
+  "criterion_3": {"labels_reached": ["unsure", "ai"], "labels_required": 3},
+  "criterion_5": {"statuses": [400, 400, 400, 400]}
+}
+```
+
+The after run matches the before criteria results. This is expected because
+the improvement targeted malformed-input handling, not the scoring signals.
+The measurable improvement appears in the attack run: `MF02` is now a
+controlled HTTP 400 instead of an HTTP 500.
 
 
 ---
